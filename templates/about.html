@@ -1,0 +1,73 @@
+<!--
+templates/about.html
+This is the "About Me" page with an updated header to be consistent
+with the index.html page. It now features "Your Name" as the brand and
+the dynamic Login/Logout link.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Me</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .inter-font {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans leading-normal tracking-normal inter-font">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg p-6 rounded-b-xl">
+        <div class="container mx-auto flex justify-between items-center">
+            <!-- Updated to 'JZT' icon -->
+            <a href="/" class="text-3xl font-extrabold text-blue-600 transition-colors duration-300 transform hover:scale-110">JZT</a>
+            <div class="flex space-x-4">
+                <a href="/" class="text-gray-600 hover:text-blue-500 transition-colors duration-300">Home</a>
+                <a href="/about" class="text-gray-600 hover:text-blue-500 transition-colors duration-300">About Me</a>
+                <a href="/contact" class="text-gray-600 hover:text-blue-500 transition-colors duration-300">Get in Touch</a>
+                <a href="https://www.linkedin.com/in/joshzacharytan/" class="text-gray-600 hover:text-blue-500 transition-colors duration-300" target="_blank">LinkedIn</a>
+                <a href="/comments" class="text-gray-600 hover:text-blue-500 transition-colors duration-300">Comments</a>
+                {% if user %}
+                <a href="/logout" class="text-red-600 hover:text-red-800 transition-colors duration-300">Logout</a>
+                {% else %}
+                <a href="/login" class="text-green-600 hover:text-green-800 transition-colors duration-300">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto mt-10 p-8 bg-white shadow-xl rounded-lg">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-center text-gray-900 mb-4">About Me</h1>
+        
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">My Background</h2>
+                <!-- The text has been split into two paragraphs for better readability -->
+                <p class="text-gray-700 text-justify mb-4">
+                    Curious and passionate about all things tech, I actively manage a production-grade home lab running Nextcloud, Vaultwarden, Pi-hole, n8n, and other services on a NAS and Raspberry Pi cluster, implementing CI/CD pipelines and infrastructure automation while demonstrating strong troubleshooting and sysadmin capabilities.
+                </p>
+                <p class="text-gray-700 text-justify">
+                    Leveraging 16 years in financial services across advisory, compliance, and project management, I combine analytical rigor with operational discipline - skills that translate perfectly to DevOps. My AI/ML training complements this technical foundation, while my experience training teams ensures clear communication of complex concepts. Eager to apply this unique blend of skills in a junior DevOps role.
+                </p>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Technical Skills</h2>
+                <ul class="list-disc list-inside space-y-2 text-gray-700">
+                    <li>Python, Linux, SQL</li>
+                    <li>MySQL, PostgreSQL</li>
+                    <li>Microsoft Azure, AWS</li>
+                    <li>Proxmox, Kubernetes, Docker Swarm</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

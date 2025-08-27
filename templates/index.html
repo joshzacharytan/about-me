@@ -1,0 +1,61 @@
+<!--
+templates/index.html
+This is the home page of your website. It now features the profile picture
+to welcome visitors.
+This version includes the LinkedIn link in the navigation bar.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal Website</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .inter-font {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans leading-normal tracking-normal inter-font">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg p-6 rounded-b-xl">
+        <div class="container mx-auto flex justify-between items-center">
+            <!-- Updated to 'JZT' icon -->
+            <a href="/" class="text-3xl font-extrabold text-blue-600 transition-colors duration-300 transform hover:scale-110">JZT</a>
+            <div class="flex space-x-4">
+                <a href="/" class="text-gray-600 hover:text-blue-500 transition-colors duration-300">Home</a>
+                <a href="/about" class="text-gray-600 hover:text-blue-500 transition-colors duration-300">About Me</a>
+                <a href="/contact" class="text-gray-600 hover:text-blue-500 transition-colors duration-300">Get in Touch</a>
+                <!-- Added LinkedIn link here with your provided URL -->
+                <a href="https://www.linkedin.com/in/joshzacharytan/" class="text-gray-600 hover:text-blue-500 transition-colors duration-300" target="_blank">LinkedIn</a>
+                <a href="/comments" class="text-gray-600 hover:text-blue-500 transition-colors duration-300">Comments</a>
+                {% if user %}
+                <a href="/logout" class="text-red-600 hover:text-red-800 transition-colors duration-300">Logout</a>
+                {% else %}
+                <a href="/login" class="text-green-600 hover:text-green-800 transition-colors duration-300">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto mt-10 p-8 bg-white shadow-xl rounded-lg">
+        <!-- Profile Picture Section -->
+        <div class="flex justify-center mb-8">
+            <!-- The image size has been increased by 200% and the src has been updated -->
+            <img class="w-64 h-64 rounded-full mx-auto object-cover" 
+                 src="static/Joshua.jpg" 
+                 alt="Your profile picture">
+        </div>
+
+        <h1 class="text-4xl md:text-5xl font-extrabold text-center text-gray-900 mb-4">Welcome to my corner of the web!</h1>
+        <p class="text-xl md:text-2xl text-center text-gray-600">This is my personal website where I showcase my skills and projects.</p>
+    </div>
+
+</body>
+</html>
