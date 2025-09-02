@@ -1,21 +1,16 @@
-# Kubernetes Deployment Example for Personal Website
-# Copy this file to k8s-deployment.yml and customize for your environment
+# Simple Kubernetes deployment for personal website
+# Two main parts: Deployment (runs the app) and Service (exposes it)
 
-# Deployment: Manages your application pods
+# Deployment: Runs your FastAPI app in pods
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: personal-website
 spec:
-  # Number of pod replicas to run
-  replicas: 2
-  
-  # Selector to match pods with labels
+  replicas: 2  # Run 2 copies of your app
   selector:
     matchLabels:
       app: personal-website
-  
-  # Pod template
   template:
     metadata:
       labels:
@@ -23,87 +18,22 @@ spec:
     spec:
       containers:
       - name: personal-website
-        
-        # Docker image to use
-        # Option 1: Use Docker Hub image (recommended)
         image: joshzacharytan/personal-website:latest
-        
-        # Option 2: Use local image (if built locally)
-        # image: personal-website:latest
-        # imagePullPolicy: Never
-        
-        # Container port (FastAPI runs on 8000)
         ports:
-        - containerPort: 8000
-        
-        # Environment variables for database connection
+        - containerPort: 8000  # Your FastAPI app runs on port 8000
         env:
-        
-        # Database host configuration
-        # Option 1: Local MySQL on host machine (Docker Desktop)
+        # Database connection - connects to MySQL on your host machine
         - name: MYSQL_HOST
           value: "host.docker.internal"
-        
-        # Option 2: MySQL service in Kubernetes cluster
-        # - name: MYSQL_HOST
-        #   value: "mysql-service.default.svc.cluster.local"
-        
-        # Option 3: External MySQL server (cloud/remote)
-        # - name: MYSQL_HOST
-        #   value: "your-mysql-server.com"
-        
-        # Database credentials
-        # Method 1: Direct values (simple, for learning)
         - name: MYSQL_USER
-          value: "your_mysql_username"     # Replace with actual username
+          value: "mysql_username"      # Replace with your actual username
         - name: MYSQL_PASSWORD
-          value: "your_mysql_password"     # Replace with actual password
+          value: "mysql_password"  # Replace with your actual password
         - name: MYSQL_DB
-          value: "your_database_name"      # Replace with actual database name
-        
-        # Method 2: Using Kubernetes secrets (more secure)
-        # First create secret: kubectl create secret generic mysql-secret --from-env-file=.env
-        # - name: MYSQL_USER
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: mysql-secret
-        #       key: MYSQL_USER
-        # - name: MYSQL_PASSWORD
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: mysql-secret
-        #       key: MYSQL_PASSWORD
-        # - name: MYSQL_DB
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: mysql-secret
-        #       key: MYSQL_DB
-        
-        # Optional: Resource limits (uncomment to use)
-        # resources:
-        #   requests:
-        #     memory: "128Mi"
-        #     cpu: "100m"
-        #   limits:
-        #     memory: "256Mi"
-        #     cpu: "200m"
-        
-        # Optional: Health checks (uncomment to use)
-        # livenessProbe:
-        #   httpGet:
-        #     path: /
-        #     port: 8000
-        #   initialDelaySeconds: 30
-        #   periodSeconds: 10
-        # readinessProbe:
-        #   httpGet:
-        #     path: /
-        #     port: 8000
-        #   initialDelaySeconds: 5
-        #   periodSeconds: 5
+          value: "mysql_db"   # Replace with your actual database name
 
 ---
-# Service: Exposes your application
+# Service: Makes your app accessible from outside the cluster
 apiVersion: v1
 kind: Service
 metadata:
@@ -111,104 +41,16 @@ metadata:
 spec:
   selector:
     app: personal-website
-  
   ports:
   - protocol: TCP
-    port: 8000           # Port inside the cluster
-    targetPort: 8000     # Port on the container
-    nodePort: 30080      # Port on your local machine (30000-32767 range)
-  
-  # Service types:
-  # NodePort: Exposes on localhost:nodePort (good for local development)
+    port: 8000
+    targetPort: 8000
+    nodePort: 30080  # Access your app at localhost:30080
   type: NodePort
-  
-  # ClusterIP: Only accessible within cluster (default)
-  # type: ClusterIP
-  
-  # LoadBalancer: Creates external load balancer (cloud environments)
-  # type: LoadBalancer
 
-# Optional: MySQL Database in Kubernetes (uncomment if you want MySQL in cluster)
-# ---
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: mysql
-# spec:
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#       app: mysql
-#   template:
-#     metadata:
-#       labels:
-#         app: mysql
-#     spec:
-#       containers:
-#       - name: mysql
-#         image: mysql:8.0
-#         env:
-#         - name: MYSQL_ROOT_PASSWORD
-#           value: "rootpassword"
-#         - name: MYSQL_DATABASE
-#           value: "your_database_name"
-#         - name: MYSQL_USER
-#           value: "your_mysql_username"
-#         - name: MYSQL_PASSWORD
-#           value: "your_mysql_password"
-#         ports:
-#         - containerPort: 3306
-#         volumeMounts:
-#         - name: mysql-storage
-#           mountPath: /var/lib/mysql
-#       volumes:
-#       - name: mysql-storage
-#         emptyDir: {}
-# 
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: mysql-service
-# spec:
-#   selector:
-#     app: mysql
-#   ports:
-#   - port: 3306
-#     targetPort: 3306
-#   type: ClusterIP
-
-# Instructions:
-# 
-# 1. Copy this file:
-#    cp k8s-deployment.example.yml k8s-deployment.yml
-# 
-# 2. Edit k8s-deployment.yml and replace:
-#    - your_mysql_username
-#    - your_mysql_password  
-#    - your_database_name
-# 
-# 3. Deploy to Kubernetes:
-#    kubectl apply -f k8s-deployment.yml
-# 
-# 4. Check deployment status:
-#    kubectl get pods
-#    kubectl get services
-# 
-# 5. Access your application:
-#    http://localhost:30080
-# 
-# 6. View logs:
-#    kubectl logs -l app=personal-website
-# 
-# 7. Scale your application:
-#    kubectl scale deployment personal-website --replicas=3
-# 
-# 8. Delete deployment:
-#    kubectl delete -f k8s-deployment.yml
-# 
-# Troubleshooting:
-# - Check pod status: kubectl describe pod <pod-name>
-# - View pod logs: kubectl logs <pod-name>
-# - Check service: kubectl describe service personal-website-service
-# - Test connectivity: kubectl port-forward service/personal-website-service 8080:8000
+# How to use:
+# 1. Replace the MYSQL_* values above with your actual database credentials
+# 2. Deploy: kubectl apply -f k8s-deployment.yml
+# 3. Check: kubectl get pods
+# 4. Access: http://localhost:30080
+# 5. Delete: kubectl delete -f k8s-deployment.yml
