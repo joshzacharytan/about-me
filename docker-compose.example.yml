@@ -1,0 +1,86 @@
+# Docker Compose Example File
+# Copy this to docker-compose.yml and customize for your environment
+# Make sure to create a .env file with your database credentials
+
+version: '3.8'
+
+services:
+  # FastAPI Application Service
+  web:
+    # Option 1: Use pre-built image from Docker Hub
+    image: joshzacharytan/personal-website:latest
+    
+    # Option 2: Build locally (uncomment the lines below and comment out the image line above)
+    # build: 
+    #   context: .
+    #   dockerfile: Dockerfile
+    
+    container_name: personal_website_app
+    restart: unless-stopped
+    ports:
+      # Map container port 8000 to host port 8000
+      - "8000:8000"
+    environment:
+      # Database connection settings using variables from .env file
+      
+      # For local MySQL on host machine:
+      MYSQL_HOST: host.docker.internal
+      
+      # For containerized MySQL (if using MySQL container):
+      # MYSQL_HOST: db
+      
+      # For remote MySQL (Azure, AWS RDS, etc.):
+      # MYSQL_HOST: your-mysql-server.mysql.database.azure.com
+      
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DB: ${MYSQL_DB}
+    
+    # Required for connecting to local MySQL on host machine
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    
+    # Optional: Mount local directory for development
+    # volumes:
+    #   - .:/app
+    
+    healthcheck:
+      # Check if FastAPI app is responding
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: MySQL Database Service (uncomment if you want containerized MySQL)
+  # db:
+  #   image: mysql:8.0
+  #   container_name: personal_website_db
+  #   restart: unless-stopped
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+  #     MYSQL_DATABASE: ${MYSQL_DB}
+  #     MYSQL_USER: ${MYSQL_USER}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+  #     timeout: 20s
+  #     retries: 10
+
+# Optional: Named volumes (uncomment if using MySQL container)
+# volumes:
+#   mysql_data:
+#     driver: local
+
+# Instructions:
+# 1. Copy this file to docker-compose.yml
+# 2. Create a .env file with your database credentials:
+#    MYSQL_USER=your_username
+#    MYSQL_PASSWORD=your_password
+#    MYSQL_HOST=localhost (or your MySQL server)
+#    MYSQL_DB=your_database_name
+# 3. Run: docker-compose up -d
+# 4. Access your app at: http://localhost:8000
