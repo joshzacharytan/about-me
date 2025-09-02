@@ -32,11 +32,72 @@ The website includes the following main sections:
 
 ## 📋 Prerequisites
 
-- Python 3.7+
-- MySQL database server
-- pip (Python package manager)
+- **Option 1 (Docker)**: Docker and Docker Compose
+- **Option 2 (Local)**: Python 3.7+, MySQL database server, pip (Python package manager)
 
 ## ⚙️ Installation & Setup
+
+### 🐳 Docker Deployment (Recommended)
+
+The easiest way to run this application is using Docker Compose with the pre-built image available on Docker Hub.
+
+#### Quick Start with Docker Compose
+
+1. **Copy the docker-compose template:**
+```bash
+# Copy the example file to create your docker-compose.yml
+cp docker-compose.example.yml docker-compose.yml
+```
+
+2. **Create environment file:**
+```bash
+# Create .env file with your MySQL credentials
+cat > .env << EOF
+MYSQL_USER=your_mysql_username
+MYSQL_PASSWORD=your_mysql_password
+MYSQL_HOST=localhost
+MYSQL_DB=your_database_name
+EOF
+```
+
+3. **Start the application:**
+```bash
+# Pull the latest image and start the container
+docker-compose pull
+docker-compose up -d
+```
+
+4. **Access the website:**
+Open `http://localhost:8000` in your browser
+
+#### Docker Compose Management
+
+```bash
+# View running containers
+docker-compose ps
+
+# View application logs
+docker-compose logs -f web
+
+# Stop the application
+docker-compose down
+
+# Restart the application
+docker-compose restart
+
+# Update to latest image
+docker-compose pull && docker-compose up -d
+```
+
+#### Docker Image Information
+
+- **Image**: `joshzacharytan/personal-website:latest`
+- **Size**: ~810MB
+- **Base**: Python 3.11 slim
+- **Port**: 8000
+- **Health Check**: Built-in endpoint monitoring
+
+### 🐍 Local Python Setup
 
 ### 1. Clone the Repository
 
@@ -83,20 +144,23 @@ The website will be available at `http://localhost:8000`
 
 ```
 about-me/
-├── app.py                 # Main FastAPI application
-├── requirements.txt       # Python dependencies
-├── .env                  # Environment variables (create this)
-├── static/               # Static files (images, CSS, JS)
-│   └── Joshua.jpg        # Profile picture
-└── templates/            # HTML templates
-    ├── index.html        # Home page
-    ├── about.html        # About me page
-    ├── contact.html      # Contact form
-    ├── comments.html     # Comments system
-    ├── login.html        # User login
-    ├── register.html     # User registration
-    ├── login-error.html  # Login error page
-    └── thank-you.html    # Contact form success
+├── app.py                      # Main FastAPI application
+├── requirements.txt            # Python dependencies
+├── Dockerfile                  # Docker container configuration
+├── docker-compose.example.yml  # Docker Compose template
+├── .dockerignore              # Docker build exclusions
+├── .env                       # Environment variables (create this)
+├── static/                    # Static files (images, CSS, JS)
+│   └── Joshua.jpg             # Profile picture
+└── templates/                 # HTML templates
+    ├── index.html             # Home page
+    ├── about.html             # About me page
+    ├── contact.html           # Contact form
+    ├── comments.html          # Comments system
+    ├── login.html             # User login
+    ├── register.html          # User registration
+    ├── login-error.html       # Login error page
+    └── thank-you.html         # Contact form success
 ```
 
 ## 🔧 Configuration
@@ -152,6 +216,32 @@ The application uses three main database models:
 
 *Comments can be viewed by anyone, but posting requires authentication.
 
+## � DDocker Configuration
+
+### Container Details
+- **Base Image**: python:3.11-slim
+- **Exposed Port**: 8000
+- **Health Check**: Automatic endpoint monitoring
+- **Security**: Runs as non-root user
+- **Database Connection**: Supports local MySQL via `host.docker.internal`
+
+### Docker Compose Options
+The `docker-compose.example.yml` provides templates for:
+- **Local MySQL**: Connect to MySQL running on host machine
+- **Containerized MySQL**: Run MySQL in a separate container
+- **Remote MySQL**: Connect to cloud databases (Azure, AWS RDS)
+- **Development Mode**: Live code reloading with volume mounts
+
+### Building Custom Image
+```bash
+# Build locally
+docker build -t personal-website .
+
+# Build and tag for Docker Hub
+docker build -t your-username/personal-website:latest .
+docker push your-username/personal-website:latest
+```
+
 ## 🚧 Development Notes
 
 ### Session Management
@@ -166,6 +256,11 @@ The application uses three main database models:
 - Custom login error page for failed authentication attempts
 - Form validation for required fields
 - Graceful error handling for database operations
+
+### Docker Networking
+- Container connects to host MySQL using `host.docker.internal`
+- Port 8000 is exposed for web access
+- Health checks ensure container reliability
 
 ## 📝 About Josh Zachary Tan
 
