@@ -1,20 +1,24 @@
-# Simple Kubernetes deployment for personal website
-# Two main parts: Deployment (runs the app) and Service (exposes it)
+# Kubernetes deployment examples for personal website
+# Shows two deployment scenarios: local MySQL vs containerized MySQL
 
-# Deployment: Runs your FastAPI app in pods
+# =============================================================================
+# OPTION 1: Using LOCAL MySQL Database (running on host machine)
+# =============================================================================
+
+# App Deployment: Connects to MySQL running on your local machine
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: personal-website
+  name: personal-website-local-db
 spec:
   replicas: 2  # Run 2 copies of your app
   selector:
     matchLabels:
-      app: personal-website
+      app: personal-website-local-db
   template:
     metadata:
       labels:
-        app: personal-website
+        app: personal-website-local-db
     spec:
       containers:
       - name: personal-website
@@ -24,23 +28,23 @@ spec:
         env:
         # Database connection - connects to MySQL on your host machine
         - name: MYSQL_HOST
-          value: "host.docker.internal"
+          value: "host.docker.internal"  # Special hostname to reach host from container
         - name: MYSQL_USER
           value: "mysql_username"      # Replace with your actual username
         - name: MYSQL_PASSWORD
-          value: "mysql_password"  # Replace with your actual password
+          value: "mysql_password"      # Replace with your actual password
         - name: MYSQL_DB
-          value: "mysql_db"   # Replace with your actual database name
+          value: "mysql_db"           # Replace with your actual database name
 
 ---
-# Service: Makes your app accessible from outside the cluster
+# Service for local DB setup
 apiVersion: v1
 kind: Service
 metadata:
-  name: personal-website-service
+  name: personal-website-local-service
 spec:
   selector:
-    app: personal-website
+    app: personal-website-local-db
   ports:
   - protocol: TCP
     port: 8000
@@ -48,9 +52,145 @@ spec:
     nodePort: 30080  # Access your app at localhost:30080
   type: NodePort
 
+---
+# =============================================================================
+# OPTION 2: Using CONTAINERIZED MySQL Database (MySQL in Kubernetes)
+# =============================================================================
+
+# MySQL Deployment: Runs MySQL database in a pod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-database-container
+spec:
+  replicas: 1  # Only run 1 MySQL instance
+  selector:
+    matchLabels:
+      app: mysql-database-container
+  template:
+    metadata:
+      labels:
+        app: mysql-database-container
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0  # Use MySQL 8.0 official image
+        ports:
+        - containerPort: 3306  # MySQL default port
+        env:
+        # MySQL configuration - these create the database and user
+        - name: MYSQL_ROOT_PASSWORD
+          value: "rootpassword"     # Root password for MySQL
+        - name: MYSQL_DATABASE
+          value: "mysql_db"        # Creates this database on startup
+        - name: MYSQL_USER
+          value: "mysql_username"  # Creates this user on startup
+        - name: MYSQL_PASSWORD
+          value: "mysql_password"  # Password for the created user
+        volumeMounts:
+        # Persist MySQL data so it survives pod restarts
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      # EmptyDir volume - data will be lost if pod is deleted
+      # For production, use PersistentVolume instead
+      - name: mysql-storage
+        emptyDir: {}
+
+---
+# MySQL Service: Makes MySQL accessible to other pods in the cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-container-service
+spec:
+  selector:
+    app: mysql-database-container
+  ports:
+  - protocol: TCP
+    port: 3306      # Service port
+    targetPort: 3306  # Container port
+  type: ClusterIP  # Only accessible within the cluster
+
+---
+# App Deployment: Connects to containerized MySQL
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: personal-website-container-db
+spec:
+  replicas: 2  # Run 2 copies of your app
+  selector:
+    matchLabels:
+      app: personal-website-container-db
+  template:
+    metadata:
+      labels:
+        app: personal-website-container-db
+    spec:
+      containers:
+      - name: personal-website
+        image: joshzacharytan/personal-website:latest
+        ports:
+        - containerPort: 8000  # Your FastAPI app runs on port 8000
+        env:
+        # Database connection - now points to MySQL service in the cluster
+        - name: MYSQL_HOST
+          value: "mysql-container-service"  # Service name becomes the hostname
+        - name: MYSQL_USER
+          value: "mysql_username"
+        - name: MYSQL_PASSWORD
+          value: "mysql_password"
+        - name: MYSQL_DB
+          value: "mysql_db"
+        # Wait for MySQL to be ready before starting the app
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30  # Give MySQL time to start
+          periodSeconds: 10
+
+---
+# Service for containerized DB setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: personal-website-container-service
+spec:
+  selector:
+    app: personal-website-container-db
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+    nodePort: 30081  # Access your app at localhost:30081 (different port)
+  type: NodePort
+
+# =============================================================================
 # How to use:
-# 1. Replace the MYSQL_* values above with your actual database credentials
-# 2. Deploy: kubectl apply -f k8s-deployment.yml
-# 3. Check: kubectl get pods
+# =============================================================================
+
+# OPTION 1 - Local MySQL:
+# 1. Make sure MySQL is running on your host machine
+# 2. Replace the MYSQL_* values above with your actual database credentials
+# 3. Deploy: kubectl apply -f k8s-deployment.example.yml
 # 4. Access: http://localhost:30080
-# 5. Delete: kubectl delete -f k8s-deployment.yml
+# 5. Delete: kubectl delete deployment personal-website-local-db && kubectl delete service personal-website-local-service
+
+# OPTION 2 - Containerized MySQL:
+# 1. Replace the MYSQL_* values above with your desired credentials
+# 2. Deploy: kubectl apply -f k8s-deployment.example.yml
+# 3. Wait for MySQL to initialize (1-2 minutes)
+# 4. Access: http://localhost:30081
+# 5. Delete: kubectl delete deployment mysql-database-container personal-website-container-db && kubectl delete service mysql-container-service personal-website-container-service
+
+# Choose OPTION 1 if:
+# - You already have MySQL running locally
+# - You want to share the database with other non-Kubernetes apps
+# - You prefer managing the database outside of Kubernetes
+
+# Choose OPTION 2 if:
+# - You want everything containerized and portable
+# - You want Kubernetes to manage the entire stack
+# - You're deploying to a cluster without external database access

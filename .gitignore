@@ -3,3 +3,4 @@ __pycache__/
 /.env
 docker-compose.yml
 k8s-deployment.yml
+k8s-deployment-mysql.yml
