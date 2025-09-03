@@ -1,12 +1,18 @@
-# Docker Compose Example File
-# Copy this to docker-compose.yml and customize for your environment
-# Make sure to create a .env file with your database credentials
+# Docker Compose Examples for Personal Website
+# Shows two deployment scenarios: local MySQL vs containerized MySQL stack
+# Copy the appropriate section to docker-compose.yml and customize for your environment
 
 version: '3.8'
 
+# =============================================================================
+# OPTION 1: Using LOCAL MySQL Database (running on host machine)
+# =============================================================================
+# Use this configuration when you have MySQL already installed and running
+# on your host machine and want to connect to it from the containerized app
+
 services:
-  # FastAPI Application Service
-  web:
+  # FastAPI Application Service - connects to local MySQL
+  web-local-db:
     # Option 1: Use pre-built image from Docker Hub
     image: joshzacharytan/personal-website:latest
     
@@ -15,26 +21,17 @@ services:
     #   context: .
     #   dockerfile: Dockerfile
     
-    container_name: personal_website_app
+    container_name: personal_website_local_db
     restart: unless-stopped
     ports:
       # Map container port 8000 to host port 8000
       - "8000:8000"
     environment:
-      # Database connection settings using variables from .env file
-      
-      # For local MySQL on host machine:
-      MYSQL_HOST: host.docker.internal
-      
-      # For containerized MySQL (if using MySQL container):
-      # MYSQL_HOST: db
-      
-      # For remote MySQL (Azure, AWS RDS, etc.):
-      # MYSQL_HOST: your-mysql-server.mysql.database.azure.com
-      
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DB: ${MYSQL_DB}
+      # Database connection settings - connects to MySQL on host machine
+      MYSQL_HOST: host.docker.internal  # Special hostname to reach host from container
+      MYSQL_USER: ${MYSQL_USER}         # Your existing MySQL username
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD} # Your existing MySQL password
+      MYSQL_DB: ${MYSQL_DB}             # Your existing database name
     
     # Required for connecting to local MySQL on host machine
     extra_hosts:
@@ -51,36 +48,150 @@ services:
       timeout: 10s
       retries: 3
 
-  # Optional: MySQL Database Service (uncomment if you want containerized MySQL)
-  # db:
-  #   image: mysql:8.0
-  #   container_name: personal_website_db
-  #   restart: unless-stopped
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-  #     MYSQL_DATABASE: ${MYSQL_DB}
-  #     MYSQL_USER: ${MYSQL_USER}
-  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-  #   ports:
-  #     - "3306:3306"
-  #   volumes:
-  #     - mysql_data:/var/lib/mysql
-  #   healthcheck:
-  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-  #     timeout: 20s
-  #     retries: 10
+# =============================================================================
+# OPTION 2: Complete Stack with Containerized MySQL Database
+# =============================================================================
+# Use this configuration for a complete containerized stack where both
+# your app and MySQL database run in Docker containers
 
-# Optional: Named volumes (uncomment if using MySQL container)
+# Uncomment the section below to use containerized MySQL:
+
+# services:
+#   # MySQL Database Service - runs MySQL in a container
+#   db:
+#     image: mysql:8.0                    # Use official MySQL 8.0 image
+#     container_name: personal_website_db
+#     restart: unless-stopped
+#     environment:
+#       # MySQL initialization - these create the database and user on first run
+#       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}  # Root password for MySQL admin
+#       MYSQL_DATABASE: ${MYSQL_DB}                  # Creates this database automatically
+#       MYSQL_USER: ${MYSQL_USER}                    # Creates this user automatically
+#       MYSQL_PASSWORD: ${MYSQL_PASSWORD}            # Password for the created user
+#     ports:
+#       # Expose MySQL port for external access (optional - for debugging/admin tools)
+#       - "3306:3306"
+#     volumes:
+#       # Persist MySQL data between container restarts
+#       - mysql_data:/var/lib/mysql
+#       # Optional: Mount custom MySQL configuration
+#       # - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+#       # Optional: Mount initialization scripts
+#       # - ./mysql/init:/docker-entrypoint-initdb.d
+#     healthcheck:
+#       # Check if MySQL is ready to accept connections
+#       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+#       timeout: 20s
+#       retries: 10
+#       interval: 30s
+#       start_period: 60s  # Give MySQL time to initialize on first run
+#     networks:
+#       - app-network
+
+#   # FastAPI Application Service - connects to containerized MySQL
+#   web:
+#     # Option 1: Use pre-built image from Docker Hub
+#     image: joshzacharytan/personal-website:latest
+    
+#     # Option 2: Build locally (uncomment the lines below and comment out the image line above)
+#     # build: 
+#     #   context: .
+#     #   dockerfile: Dockerfile
+    
+#     container_name: personal_website_app
+#     restart: unless-stopped
+#     ports:
+#       # Map container port 8000 to host port 8000
+#       - "8000:8000"
+#     environment:
+#       # Database connection settings - connects to MySQL container via service name
+#       MYSQL_HOST: db                    # Service name becomes hostname in Docker network
+#       MYSQL_USER: ${MYSQL_USER}         # Must match the user created in MySQL container
+#       MYSQL_PASSWORD: ${MYSQL_PASSWORD} # Must match the password set in MySQL container
+#       MYSQL_DB: ${MYSQL_DB}             # Must match the database created in MySQL container
+    
+#     # Wait for MySQL to be ready before starting the app
+#     depends_on:
+#       db:
+#         condition: service_healthy  # Wait for MySQL healthcheck to pass
+    
+#     # Optional: Mount local directory for development
+#     # volumes:
+#     #   - .:/app
+    
+#     healthcheck:
+#       # Check if FastAPI app is responding
+#       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 3
+#       start_period: 90s  # Give app time to connect to database
+#     networks:
+#       - app-network
+
+# # Named volumes for persistent data storage
 # volumes:
 #   mysql_data:
-#     driver: local
+#     driver: local  # Stores data on local filesystem
+#     # For production, consider using external volumes or cloud storage
 
+# # Custom network for service communication
+# networks:
+#   app-network:
+#     driver: bridge  # Default Docker network driver
+
+# =============================================================================
+# Environment Variables (.env file examples)
+# =============================================================================
+
+# For OPTION 1 (Local MySQL):
+# Create a .env file with these variables for your existing MySQL setup:
+# MYSQL_USER=your_existing_username
+# MYSQL_PASSWORD=your_existing_password
+# MYSQL_DB=your_existing_database
+
+# For OPTION 2 (Containerized MySQL):
+# Create a .env file with these variables for new MySQL container:
+# MYSQL_ROOT_PASSWORD=secure_root_password_123
+# MYSQL_USER=app_user
+# MYSQL_PASSWORD=secure_app_password_456
+# MYSQL_DB=personal_website_db
+
+# =============================================================================
 # Instructions:
-# 1. Copy this file to docker-compose.yml
-# 2. Create a .env file with your database credentials:
-#    MYSQL_USER=your_username
-#    MYSQL_PASSWORD=your_password
-#    MYSQL_HOST=localhost (or your MySQL server)
-#    MYSQL_DB=your_database_name
-# 3. Run: docker-compose up -d
-# 4. Access your app at: http://localhost:8000
+# =============================================================================
+
+# OPTION 1 - Local MySQL Setup:
+# 1. Make sure MySQL is running on your host machine
+# 2. Create a .env file with your existing MySQL credentials (see example above)
+# 3. Copy the "web-local-db" service section to a new docker-compose.yml file
+# 4. Run: docker-compose up -d
+# 5. Access your app at: http://localhost:8000
+
+# OPTION 2 - Containerized MySQL Setup:
+# 1. Create a .env file with new MySQL credentials (see example above)
+# 2. Uncomment the entire "services", "volumes", and "networks" sections for Option 2
+# 3. Comment out or remove the Option 1 service
+# 4. Copy to docker-compose.yml
+# 5. Run: docker-compose up -d
+# 6. Wait for MySQL to initialize (first run takes 1-2 minutes)
+# 7. Access your app at: http://localhost:8000
+# 8. Optional: Access MySQL directly at localhost:3306 for debugging
+
+# Choose OPTION 1 if:
+# - You already have MySQL installed and configured locally
+# - You want to share the database with other applications
+# - You prefer managing MySQL outside of Docker
+
+# Choose OPTION 2 if:
+# - You want a completely containerized and portable setup
+# - You're starting fresh or want isolated database for this project
+# - You want Docker to manage the entire application stack
+# - You're deploying to environments without existing MySQL
+
+# Useful Commands:
+# - Start services: docker-compose up -d
+# - View logs: docker-compose logs -f
+# - Stop services: docker-compose down
+# - Stop and remove data: docker-compose down -v
+# - Rebuild containers: docker-compose up -d --build
